@@ -273,18 +273,15 @@
 ;; 97
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[[1]
- [1 1]
- [1 2 1]
- [1 3 3 1]
- [1 4 6 4 1]
- [1 5 10 10 5 1]
- [1 6 15 20 15 6 1]]
+(defn pascals-triangle [acc max]
+  (let [row #(conj (into [1] (map (fn [c] (reduce + c)) (partition 2 1 %))) 1)]
+    (if (= (count acc) max)
+      acc
+      (recur (conj acc (row (last acc))) max))))
 
 (with-test
   (defn fc97 [n]
-    ;;TODO
-    )
+    (last (pascals-triangle [[1]] n)))
 
   (is (= (fc97 1) [1]))
   (is (= (map fc97 (range 1 6)))
@@ -370,3 +367,4 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
