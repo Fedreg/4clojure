@@ -303,7 +303,7 @@
 ;; 30
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(fn deduper [acc s]
+(defn deduper [acc s]
   (let [xs   (first s)
         ss   (last acc)
         ys   (rest s)
@@ -349,86 +349,97 @@
 ;; 33
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Write a function which replicates each element of a sequence a variable number of times.
-;; (= (__ [1 2 3] 2) '(1 1 2 2 3 3))
-;; (= (__ [:a :b] 4) '(:a :a :a :a :b :b :b :b))
-;; (= (__ [4 5 6] 1) '(4 5 6))
-;; (= (__ [[1 2] [3 4]] 2) '([1 2] [1 2] [3 4] [3 4]))
-;; (= (__ [44 33] 2) [44 44 33 33])
+(with-test
+  (defn fc33 [s n]
+    (mapcat #(repeat n %) s))
+
+  (is (= (fc33 [1 2 3] 2) '(1 1 2 2 3 3)))
+  (is (= (fc33 [:a :b] 4) '(:a :a :a :a :b :b :b :b)))
+  (is (= (fc33 [4 5 6] 1) '(4 5 6)))
+  (is (= (fc33 [[1 2] [3 4]] 2) '([1 2] [1 2] [3 4] [3 4])))
+  (is (= (fc33 [44 33] 2) [44 44 33 33])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 34
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Write a function which creates a list of all integers in a given range.
-;; (= (__ 1 4) '(1 2 3))
-;; (= (__ -2 2) '(-2 -1 0 1))
-;; (= (__ 5 8) '(5 6 7))
-;; Special Restrictions
-;; range
+(with-test
+  (defn fc34 [start end]
+    (loop [n start
+           l '()]
+      (if (< n end)
+        (do
+          (conj l n)
+          (recur (inc n) (conj l n)))
+        (sort l))))
+
+  (is (= (fc34 1 4) '(1 2 3)))
+  (is (= (fc34 -2 2) '(-2 -1 0 1)))
+  (is (= (fc34 5 8) '(5 6 7))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 35
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Clojure lets you give local names to values using the special let-form. (= __ (let [x 5] (+ 2 x)))
-;; (= __ (let [x 3, y 10] (- y x)))
-;; (= __ (let [x 21] (let [y 3] (/ x y))))
+(with-test
+  (def fc35 7)
+
+  (is (= fc35 (let [x 3, y 10] (- y x))))
+  (is (= fc35 (let [x 21] (let [y 3] (/ x y))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 36
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Can you bind x, y, and z so that these are all true?
-;; (= 10 (let __ (+ x y)))
-;; (= 4 (let __ (+ y z)))
-;; (= 1 (let __ z))
+(with-test
+  (def fc36 nil)
+
+  (is (= 10 (let [x 7 y 3 z 1] (+ x y))))
+  (is (= 4  (let [x 7 y 3 z 1] (+ y z))))
+  (is (= 1  (let [x 7 y 3 z 1] z))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 37
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Regex patterns are supported with a special reader macro.
-;; (= __ (apply str (re-seq #"[A-Z]+" "bA1B3Ce ")))
+(= "ABC" (apply str (re-seq #"[A-Z]+" "bA1B3Ce ")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 38
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Write a function which takes a variable number of parameters and returns the maximum value.
-;; (= (__ 1 8 3 4) 8)
-;; (= (__ 30 20) 30)
-;; (= (__ 45 67 11) 67)
-;; Special Restrictions
-;; max
-;; max-key
 
+(with-test
+  (defn fc38 [& n]
+    (last (sort n)))
+
+  (is (= (fc38 1 8 3 4) 8))
+  (is (= (fc38 30 20) 30))
+  (is (= (fc38 45 67 11) 67)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 39
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(with-test
+  (defn fc39 [a b]
+    (mapcat #(conj [] %1 %2) a b))
 
-;; Write a function which takes two sequences and returns the first item from each, then the second item from each, then the third, etc.
-
-;; (= (__ [1 2 3] [:a :b :c]) '(1 :a 2 :b 3 :c))
-;; (= (__ [1 2] [3 4 5 6]) '(1 3 2 4))
-;; (= (__ [1 2 3 4] [5]) [1 5])
-;; (= (__ [30 20] [25 15]) [30 25 20 15])
-;; Special Restrictions
-;; interleave
-
+  (is (= (fc39 [1 2 3] [:a :b :c]) '(1 :a 2 :b 3 :c)))
+  (is (= (fc39 [1 2] [3 4 5 6]) '(1 3 2 4)))
+  (is (= (fc39 [1 2 3 4] [5]) [1 5]))
+  (is (= (fc39 [30 20] [25 15]) [30 25 20 15])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 40
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(with-test
+  (defn fc40 [v s]
+    (butlast (mapcat #(conj [] % v) s)))
 
-;; Write a function which separates the items of a sequence by an arbitrary value.
-;; (= (__ 0 [1 2 3]) [1 0 2 0 3])
-;; (= (apply str (__ ", " ["one" "two" "three"])) "one, two, three")
-;; (= (__ :z [:a :b :c :d]) [:a :z :b :z :c :z :d])
-;; Special Restrictions
-;; interpose
+  (is (= (fc40 0 [1 2 3]) [1 0 2 0 3]))
+  (is (= (apply str (fc40 ", " ["one" "two" "three"])) "one, two, three"))
+  (is (= (fc40 :z [:a :b :c :d]) [:a :z :b :z :c :z :d])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 41
