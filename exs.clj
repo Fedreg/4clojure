@@ -621,17 +621,60 @@
 ;; 54
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn split [acc n s]
+  (let [xs (take n s)
+        ys (drop n s)]
+    (if (> n (count ys))
+      (reduce conj '() (conj acc xs))
+      (recur (conj acc xs) n ys))))
+
+(with-test
+  (defn fc54 [n s]
+    (split '() n s))
+
+  (is (= (fc54 3 (range 9)) '((0 1 2) (3 4 5) (6 7 8))))
+  (is (= (fc54 2 (range 8)) '((0 1) (2 3) (4 5) (6 7))))
+  (is (= (fc54 3 (range 8)) '((0 1 2) (3 4 5)))))
+
 ;;;;5;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 55
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-test
+  (defn fc55 [s]
+    (reduce-kv
+     (fn [m k v] (assoc m k (count v)))
+     {}
+     (group-by identity s)))
+
+  (is (= (fc55 [1 1 2 3 2 1 1]) {1 4, 2 2, 3 1}))
+  (is (= (fc55 [:b :a :b :a :b]) {:a 2, :b 3}))
+  (is (= (fc55 '([1 2] [1 3] [1 3])) {[1 2] 1, [1 3] 2})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 56
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; cheated with the vector? thing but works
+(with-test
+  (defn fc56 [s]
+    (if-not (vector? (first s))
+      (sort (map first (vals (group-by identity s))))
+      (map first (vals (group-by identity s)))))
+
+  (is (= (fc56 [1 2 1 3 1 2 4]) [1 2 3 4]))
+  (is (= (fc56 [:a :a :b :b :c :c]) [:a :b :c]))
+  (is (= (fc56 '([2 4] [1 2] [1 3] [1 3])) '([2 4] [1 2] [1 3])))
+  (is (= (fc56 (range 50)) (range 50))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 57
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-test
+  (def fc57 '(5 4 3 2 1))
+
+(is (= fc57 ((fn foo [x] (when (> x 0) (conj (foo (dec x)) x))) 5))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 58
@@ -650,6 +693,117 @@
   (is (= 5       ((fc58 (partial + 3) second) [1 2 3 4])))
   (is (= true    ((fc58 zero? #(mod % 8) +) 3 5 7 9)))
   (is (= "HELLO" ((fc58 #(.toUpperCase %) #(apply str %) take) 5 "hello world"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 59
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-test
+  (defn fc59 [& fns]
+    (fn [& args]
+       (reduce (fn [res f]
+                (conj res (apply f args)))
+              []
+              fns)))
+
+  (is (= [21 6 1] ((fc59 + max min) 2 3 5 1 6 4)))
+  (is (= ["HELLO" 5] ((fc59 #(.toUpperCase %) count) "hello")))
+  (is (= [2 6 4] ((fc59 :a :c :b) {:a 2, :b 4, :c 6, :d 8 :e 10}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 60
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; this one took a long time!
+(with-test
+  (defn fc60
+    ([f a b]
+     (let [xs (first b)
+           ys (rest b)]
+       (lazy-seq (cons a (when (not-empty b)
+                           (fc60 f (f a xs) ys))))))
+    ([f a]
+     (fc60 f (first a) (rest a))))
+
+  (is (= (take 5 (fc60 + (range))) [0 1 3 6 10]))
+  (is (= (fc60 conj [1] [2 3 4]) [[1] [1 2] [1 2 3] [1 2 3 4]]))
+  (is (= (last (fc60 * 2 [3 4 5])) (reduce * 2 [3 4 5]) 120)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 61
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-test
+  (defn fc61 [vk vv]
+    (reduce merge (map #(assoc {} %1 %2) vk vv)))
+
+  (is (= (fc61 [:a :b :c] [1 2 3]) {:a 1, :b 2, :c 3}))
+  (is (= (fc61 [1 2 3 4] ["one" "two" "three"]) {1 "one", 2 "two", 3 "three"}))
+  (is (= (fc61 [:foo :bar] ["foo" "bar" "baz"]) {:foo "foo", :bar "bar"})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 62
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Given a side-effect free function f and an initial value x write a function which returns an infinite lazy sequence of x, (f x), (f (f x)), (f (f (f x))), etc.
+(with-test
+  (defn fc62 [f a]
+    TODO!
+    )
+  (is (= (take 5 (fc62 #(* 2 %) 1)) [1 2 4 8 16]))
+  (is (= (take 100 (fc62 inc 0)) (take 100 (range))))
+  (is (= (take 9 (fc62 #(inc (mod % 3)) 1)) (take 9 (cycle [1 2 3])))))
+
+Special Restrictions
+iterate
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 63
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Given a function f and a sequence s, write a function which returns a map. The keys should be the values of f applied to each item in s. The value at each key should be a vector of corresponding items in the order they appear in s.
+(with-test
+  (defn fc63 [f s]
+    TODO!
+    )
+
+  (is (= (fc63 #(> % 5) [1 3 6 8]) {false [1 3], true [6 8]}))
+  (is (= (fc63 #(apply / %) [[1 2] [2 4] [4 6] [3 6]])
+         {1/2 [[1 2] [2 4] [3 6]], 2/3 [[4 6]]}))
+  (is (= (fc63 count [[1] [1 2] [3] [1 2 3] [2 3]])
+         {1 [[1] [3]], 2 [[1 2] [2 3]], 3 [[1 2 3]]})))
+
+Special Restrictions
+group-by
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 64
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-test
+  (def fc64 +)
+
+  (is (= 15 (reduce fc64 [1 2 3 4 5])))
+  (is (=  0 (reduce fc64 [])))
+  (is (=  6 (reduce fc64 1 [2 3]))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 65
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-test
+  (defn fc65 [coll]
+    (cond
+      (instance? clojure.lang.PersistentArrayMap coll) :map
+      (instance? clojure.lang.PersistentVector   coll) :vector
+      (instance? clojure.lang.PersistentHashSet  coll) :set
+      :else                                           :list))
+
+  (is (= :map (fc65 {:a 1, :b 2})))
+  (is (= :list (fc65 (range (rand-int 20)))))
+  (is (= :vector (fc65 [1 2 3 4 5 6])))
+  (is (= :set (fc65 #{10 (rand-int 5)})))
+  (is (= [:map :set :vector :list] (map fc65 [{} #{} [] ()]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 66
