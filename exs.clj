@@ -745,36 +745,36 @@
 ;; 62
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-Given a side-effect free function f and an initial value x write a function which returns an infinite lazy sequence of x, (f x), (f (f x)), (f (f (f x))), etc.
-(with-test
-  (defn fc62 [f a]
-    TODO!
-    )
-  (is (= (take 5 (fc62 #(* 2 %) 1)) [1 2 4 8 16]))
-  (is (= (take 100 (fc62 inc 0)) (take 100 (range))))
-  (is (= (take 9 (fc62 #(inc (mod % 3)) 1)) (take 9 (cycle [1 2 3])))))
+;; Given a side-effect free function f and an initial value x write a function which returns an infinite lazy sequence of x, (f x), (f (f x)), (f (f (f x))), etc.
+;; (with-test
+;;   (defn fc62 [f a]
+;;     TODO!
+;;     )
+;;   (is (= (take 5 (fc62 #(* 2 %) 1)) [1 2 4 8 16]))
+;;   (is (= (take 100 (fc62 inc 0)) (take 100 (range))))
+;;   (is (= (take 9 (fc62 #(inc (mod % 3)) 1)) (take 9 (cycle [1 2 3])))))
 
-Special Restrictions
-iterate
+;; Special Restrictions
+;; iterate
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 63
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-Given a function f and a sequence s, write a function which returns a map. The keys should be the values of f applied to each item in s. The value at each key should be a vector of corresponding items in the order they appear in s.
-(with-test
-  (defn fc63 [f s]
-    TODO!
-    )
+;; Given a function f and a sequence s, write a function which returns a map. The keys should be the values of f applied to each item in s. The value at each key should be a vector of corresponding items in the order they appear in s.
+;; (with-test
+;;   (defn fc63 [f s]
+;;     TODO!
+;;     )
 
-  (is (= (fc63 #(> % 5) [1 3 6 8]) {false [1 3], true [6 8]}))
-  (is (= (fc63 #(apply / %) [[1 2] [2 4] [4 6] [3 6]])
-         {1/2 [[1 2] [2 4] [3 6]], 2/3 [[4 6]]}))
-  (is (= (fc63 count [[1] [1 2] [3] [1 2 3] [2 3]])
-         {1 [[1] [3]], 2 [[1 2] [2 3]], 3 [[1 2 3]]})))
+;;   (is (= (fc63 #(> % 5) [1 3 6 8]) {false [1 3], true [6 8]}))
+;;   (is (= (fc63 #(apply / %) [[1 2] [2 4] [4 6] [3 6]])
+;;          {1/2 [[1 2] [2 4] [3 6]], 2/3 [[4 6]]}))
+;;   (is (= (fc63 count [[1] [1 2] [3] [1 2 3] [2 3]])
+;;          {1 [[1] [3]], 2 [[1 2] [2 3]], 3 [[1 2 3]]})))
 
-Special Restrictions
-group-by
+;; Special Restrictions
+;; group-by
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 64
@@ -794,10 +794,10 @@ group-by
 (with-test
   (defn fc65 [coll]
     (cond
-      (instance? clojure.lang.PersistentArrayMap coll) :map
-      (instance? clojure.lang.PersistentVector   coll) :vector
-      (instance? clojure.lang.PersistentHashSet  coll) :set
-      :else                                           :list))
+      (true? (clojure.string/starts-with? (str coll) "[")) :vector
+      (true? (clojure.string/starts-with? (str coll) "#")) :set
+      (true? (clojure.string/starts-with? (str coll) "{")) :map
+      :else                                                :list))
 
   (is (= :map (fc65 {:a 1, :b 2})))
   (is (= :list (fc65 (range (rand-int 20)))))
@@ -819,6 +819,158 @@ group-by
   (is (= (fc66 10 5) 5))
   (is (= (fc66 5 7) 1))
   (is (= (fc66 1023 858) 33)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 67
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn prime? [n]
+  (if
+    (some true? (map (fn [a] (zero? (mod n a))) (range 2 n)))
+    false
+    true))
+
+(with-test
+  (defn fc67 [n]
+    (take n (filter #(and (prime? %)
+                          (< 1 %))(range))))
+
+  (is (= (fc67 2) [2 3]))
+  (is (= (fc67 5) [2 3 5 7 11]))
+  (is (= (last (fc67 100)) 541)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 68
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(list 7 6 5 4 3)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 69
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-test
+  (defn fc69 [f & ms]
+    (reduce-kv (fn [m k v]
+                 (if (some? (get m k))
+                   (assoc m k (f (get m k) v))
+                   (assoc m k v)))
+               (first ms)
+               (into {} (rest ms))))
+
+  (is (= (fc69 * {:a 2, :b 3, :c 4} {:a 2} {:b 2} {:c 5})
+         {:a 4, :b 6, :c 20}))
+  (is (= (fc69 - {1 10, 2 20} {1 3, 2 10, 3 15})
+         {1 7, 2 10, 3 15}))
+  (is (= (fc69 concat {:a [3], :b [6]} {:a [4 5], :c [8 9]} {:b [7]})
+         {:a [3 4 5], :b [6 7], :c [8 9]})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 70
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Lame
+(defn third [s]
+  (when (>= (count s) 3)
+    (nth s 2)))
+
+(defn fourth [s]
+  (when (>= (count s) 4)
+    (nth s 3)))
+
+(defn fifth [s]
+  (when (>= (count s) 5)
+    (nth s 4)))
+
+(with-test
+  (defn fc70 [s]
+    (as-> s -s
+      (clojure.string/split -s #" ")
+      (sort-by #((juxt first second third fourth fifth)
+                 (clojure.string/lower-case %)) -s)
+      (mapv #(clojure.string/replace % #"[!.]" "") -s)))
+
+  (is (= (fc70  "Have a nice day.")
+         ["a" "day" "Have" "nice"]))
+  (is (= (fc70  "Clojure is a fun language!")
+         ["a" "Clojure" "fun" "is" "language"]))
+  (is (= (fc70  "Fools fall for foolish follies.")
+         ["fall" "follies" "foolish" "Fools" "for"])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 71
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-test
+  (def fc71 last)
+
+  (is (= (fc71 (sort (rest (reverse [2 5 4 1 3 6]))))
+         (-> [2 5 4 1 3 6] (reverse) (rest) (sort) (fc71))
+         5)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 72
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(with-test
+  (def fc72 (partial reduce +))
+
+  (is (= (fc72 (map inc (take 3 (drop 2 [2 5 4 1 3 6]))))
+         (->> [2 5 4 1 3 6] (drop 2) (take 3) (map inc) (fc72))
+         11)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 73
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TODO!
+A tic-tac-toe board is represented by a two dimensional vector. X is represented by :x, O is represented by :o, and empty is represented by :e. A player wins by placing three Xs or three Os in a horizontal, vertical, or diagonal row. Write a function which analyzes a tic-tac-toe board and returns :x if X has won, :o if O has won, and nil if neither player has won.
+
+(= nil (__ [[:e :e :e]
+            [:e :e :e]
+            [:e :e :e]]))
+(= :x (__ [[:x :e :o]
+           [:x :e :e]
+           [:x :e :o]]))
+(= :o (__ [[:e :x :e]
+           [:o :o :o]
+           [:x :e :x]]))
+(= nil (__ [[:x :e :o]
+            [:x :x :e]
+            [:o :x :o]]))
+(= :x (__ [[:x :e :e]
+           [:o :x :e]
+           [:o :e :x]]))
+(= :o (__ [[:x :e :o]
+           [:x :o :e]
+           [:o :e :x]]))
+(= nil (__ [[:x :o :x]
+            [:x :o :x]
+            [:o :x :o]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 74
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TODO!
+Given a string of comma separated integers, write a function which returns a new comma separated string that only contains the numbers which are perfect squares.
+
+(= (__ "4,5,6,7,8,9") "4,9")
+(= (__ "15,16,25,36,37") "16,25,36")
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 75
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TODO!
+Two numbers are coprime if their greatest common divisor equals 1. Euler's totient function f(x) is defined as the number of positive integers less than x which are coprime to x. The special case f(1) equals 1. Write a function which calculates Euler's totient function.
+
+(= (__ 1) 1)
+(= (__ 10) (count '(1 3 7 9)) 4)
+(= (__ 40) 16)
+(= (__ 99) 60)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 97
@@ -918,3 +1070,6 @@ group-by
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
