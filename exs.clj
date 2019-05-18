@@ -1,6 +1,7 @@
 (ns exs.clj
   (:require
-   [clojure.test :refer :all]))
+   [clojure.string :as str]
+   [clojure.test   :refer :all]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; test all solutions (...ones with 'with-test')
@@ -745,36 +746,35 @@
 ;; 62
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Given a side-effect free function f and an initial value x write a function which returns an infinite lazy sequence of x, (f x), (f (f x)), (f (f (f x))), etc.
-;; (with-test
-;;   (defn fc62 [f a]
-;;     TODO!
-;;     )
-;;   (is (= (take 5 (fc62 #(* 2 %) 1)) [1 2 4 8 16]))
-;;   (is (= (take 100 (fc62 inc 0)) (take 100 (range))))
-;;   (is (= (take 9 (fc62 #(inc (mod % 3)) 1)) (take 9 (cycle [1 2 3])))))
+(with-test
+  (defn fc62 [f a]
+    (cons a (lazy-seq (fc62 f (f a)))))
 
-;; Special Restrictions
-;; iterate
+  (is (= (take 5 (fc62 #(* 2 %) 1)) [1 2 4 8 16]))
+  (is (= (take 100 (fc62 inc 0)) (take 100 (range))))
+  (is (= (take 9 (fc62 #(inc (mod % 3)) 1)) (take 9 (cycle [1 2 3])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 63
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Given a function f and a sequence s, write a function which returns a map. The keys should be the values of f applied to each item in s. The value at each key should be a vector of corresponding items in the order they appear in s.
-;; (with-test
-;;   (defn fc63 [f s]
-;;     TODO!
-;;     )
+(with-test
+  (defn fc63 [f s]
+    (let [a (reduce (fn [acc n] (conj acc {(f n) n})) [] s)]
+      (reduce (fn [m data]
+                (let [k (-> data keys first)
+                      v (-> data vals first)]
+                (if (get m k)
+                  (update-in m [k] conj v)
+                  (assoc m k [v]))))
+              {}
+              a)))
 
-;;   (is (= (fc63 #(> % 5) [1 3 6 8]) {false [1 3], true [6 8]}))
-;;   (is (= (fc63 #(apply / %) [[1 2] [2 4] [4 6] [3 6]])
-;;          {1/2 [[1 2] [2 4] [3 6]], 2/3 [[4 6]]}))
-;;   (is (= (fc63 count [[1] [1 2] [3] [1 2 3] [2 3]])
-;;          {1 [[1] [3]], 2 [[1 2] [2 3]], 3 [[1 2 3]]})))
-
-;; Special Restrictions
-;; group-by
+ (is (= (fc63 #(> % 5) [1 3 6 8]) {false [1 3], true [6 8]}))
+ (is (= (fc63 #(apply / %) [[1 2] [2 4] [4 6] [3 6]])
+        {1/2 [[1 2] [2 4] [3 6]], 2/3 [[4 6]]}))
+ (is (= (fc63 count [[1] [1 2] [3] [1 2 3] [2 3]])
+        {1 [[1] [3]], 2 [[1 2] [2 3]], 3 [[1 2 3]]})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 64
@@ -869,7 +869,7 @@
 ;; 70
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Lame
+;; Lame Solution; fix
 (defn third [s]
   (when (>= (count s) 3)
     (nth s 2)))
@@ -912,7 +912,6 @@
 ;; 72
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (with-test
   (def fc72 (partial reduce +))
 
@@ -924,53 +923,171 @@
 ;; 73
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TODO!
-A tic-tac-toe board is represented by a two dimensional vector. X is represented by :x, O is represented by :o, and empty is represented by :e. A player wins by placing three Xs or three Os in a horizontal, vertical, or diagonal row. Write a function which analyzes a tic-tac-toe board and returns :x if X has won, :o if O has won, and nil if neither player has won.
+;; Lame Solution; fix
+(with-test
+  (defn fc73 [board]
+    (let [snb  #(set (nth board %))
+          vert #(mapv (fn [arr] (nth arr %)) board)
+          sv   #(set (vert %))
+          ldiag? (= (get-in board [0 0])
+                    (get-in board [1 1])
+                    (get-in board [2 2]))
+          rdiag? (= (get-in board [0 2])
+                    (get-in board [1 1])
+                    (get-in board [2 0]))]
+      (cond
+          (and
+            (= 1 (count (snb 0)))
+            (= :e (first (snb 0))))         nil
+          (= 1 (count (snb 0)))  (first (snb 0))
+          (= 1 (count (snb 1)))  (first (snb 1))
+          (= 1 (count (snb 2)))  (first (snb 2))
+          (= 1 (count (sv 0)))   (first (sv 0))
+          (= 1 (count (sv 1)))   (first (sv 1))
+          (= 1 (count (sv 2)))   (first (sv 2))
+          ldiag?                 (get-in board [0 0])
+          rdiag?                 (get-in board [0 2])
+          :else nil)))
 
-(= nil (__ [[:e :e :e]
-            [:e :e :e]
-            [:e :e :e]]))
-(= :x (__ [[:x :e :o]
-           [:x :e :e]
-           [:x :e :o]]))
-(= :o (__ [[:e :x :e]
-           [:o :o :o]
-           [:x :e :x]]))
-(= nil (__ [[:x :e :o]
-            [:x :x :e]
-            [:o :x :o]]))
-(= :x (__ [[:x :e :e]
-           [:o :x :e]
-           [:o :e :x]]))
-(= :o (__ [[:x :e :o]
-           [:x :o :e]
-           [:o :e :x]]))
-(= nil (__ [[:x :o :x]
-            [:x :o :x]
-            [:o :x :o]]))
+  (is (= nil (fc73 [[:e :e :e]
+                    [:e :e :e]
+                    [:e :e :e]])))
+  (is (= :x (fc73  [[:x :e :o]
+                    [:x :e :e]
+                    [:x :e :o]])))
+  (is (= :o (fc73  [[:e :x :e]
+                    [:o :o :o]
+                    [:x :e :x]])))
+  (is (= nil (fc73 [[:x :e :o]
+                    [:x :x :e]
+                    [:o :x :o]])))
+  (is (= :x (fc73  [[:x :e :e]
+                    [:o :x :e]
+                    [:o :e :x]])))
+  (is (= :o (fc73  [[:x :e :o]
+                    [:x :o :e]
+                    [:o :e :x]])))
+  (is (= nil (fc73 [[:x :o :x]
+                    [:x :o :x]
+                    [:o :x :o]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 74
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TODO!
-Given a string of comma separated integers, write a function which returns a new comma separated string that only contains the numbers which are perfect squares.
+(defn perfect-square? [n]
+  (str/ends-with? (str (Math/sqrt n)) ".0"))
 
-(= (__ "4,5,6,7,8,9") "4,9")
-(= (__ "15,16,25,36,37") "16,25,36")
+(with-test
+  (defn fc74 [s]
+    (let [splits (str/split s #",")
+          ints   (mapv #(Integer/parseInt %) splits)]
+      (str/join "," (filter perfect-square? ints))))
 
+(is (= (fc74 "4,5,6,7,8,9") "4,9"))
+(is (= (fc74 "15,16,25,36,37") "16,25,36")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 75
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TODO!
-Two numbers are coprime if their greatest common divisor equals 1. Euler's totient function f(x) is defined as the number of positive integers less than x which are coprime to x. The special case f(1) equals 1. Write a function which calculates Euler's totient function.
+;Two numbers are coprime if their greatest common divisor equals 1. Euler's totient function f(x) is defined as the number of positive integers less than x which are coprime to x. The special case f(1) equals 1. Write a function which calculates Euler's totient function.
+(with-test
+  (defn fc75 [n]
+    :TODO)
 
-(= (__ 1) 1)
-(= (__ 10) (count '(1 3 7 9)) 4)
-(= (__ 40) 16)
-(= (__ 99) 60)
+  (is (= (fc75 1) 1))
+  (is (= (fc75 10) (count '(1 3 7 9)) 4))
+  (is (= (fc75 40) 16))
+  (is (= (fc75 99) 60)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 76
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;The trampoline function takes a function f and a variable number of parameters. Trampoline calls f with any parameters that were supplied. If f returns a function, trampoline calls that function with no arguments. This is repeated, until the return value is not a function, and then trampoline returns that non-function value. This is useful for implementing mutually recursive algorithms in a way that won't consume the stack.
+(with-test
+  (defn fc76 [f & xs]
+    :TODO
+    )
+  (is (= fc76
+         (letfn
+             [(foo [x y] #(bar (conj x y) y))
+              (bar [x y] (if (> (last x) 10)
+                           x
+                           #(foo x (+ 2 y))))]
+           (trampoline foo [] 1)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 77
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;Write a function which finds all the anagrams in a vector of words. A word x is an anagram of word y if all the letters in x can be rearranged in a different order to form y. Your function should return a set of sets, where each sub-set is a group of words which are anagrams of each other. Each sub-set should have at least two words. Words without any anagrams should not be included in the result.
+
+(with-test
+  (defn fc77 [n]
+    :TODO )
+
+  (is (= (fc77 ["meat" "mat" "team" "mate" "eat"])
+         #{#{"meat" "team" "mate"}}))
+  (is (= (fc77 ["veer" "lake" "item" "kale" "mite" "ever"])
+         #{#{"veer" "ever"} #{"lake" "kale"} #{"mite" "item"}})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 78
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;Reimplement the function described in "Intro to Trampoline".
+(with-test
+  (defn fc78 [x]
+    :TODO)
+
+  (is (= (letfn [(triple [x] #(sub-two (* 3 x)))
+                 (sub-two [x] #(stop?(- x 2)))
+                 (stop? [x] (if (> x 50) x #(triple x)))]
+           (fc78 triple 2))
+         82))
+  (is (= (letfn [(my-even? [x] (if (zero? x) true #(my-odd? (dec x))))
+                 (my-odd? [x] (if (zero? x) false #(my-even? (dec x))))]
+           (map (partial fc77 my-even?) (range 6)))
+         [true false true false true false])))
+Special Restrictions
+trampoline
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 79
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;Write a function which calculates the sum of the minimal path through a triangle. The triangle is represented as a collection of vectors. The path should start at the top of the triangle and move to an adjacent number on the next row until the bottom of the triangle is reached.
+(with-test
+  (defn fc79 [x]
+    :TODO)
+
+  (is (= 7 (fc79 '([1]
+                   [2 4]
+                   [5 1 4]
+                   [2 3 4 5])))) ; 1->2->1->3
+  (is (= 20 (fc79 '([3]
+                    [2 4]
+                    [1 9 3]
+                    [9 9 2 4]
+                    [4 6 6 7 8]
+                    [5 7 3 5 1 4]))))) ; 3->4->3->2->7->1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 80
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;A number is "perfect" if the sum of its divisors equal the number itself. 6 is a perfect number because 1+2+3=6. Write a function which returns true for perfect numbers and false otherwise.
+(with-test
+  (defn fc80 [n]
+    :TODO)
+
+  (is (= (fc80 6) true))
+  (is (= (fc80 7) false))
+  (is (= (fc80 496) true))
+  (is (= (fc80 500) false))
+  (is (= (fc80 8128) true)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 97
@@ -987,14 +1104,14 @@ Two numbers are coprime if their greatest common divisor equals 1. Euler's totie
     (last (pascals-triangle [[1]] n)))
 
   (is (= (fc97 1) [1]))
-  (is (= (map fc97 (range 1 6)))
+  (is (= (map fc97 (range 1 6))
       [[1]
        [1 1]
        [1 2 1]
        [1 3 3 1]
-       [1 4 6 4 1]])
+       [1 4 6 4 1]]))
   (is (= (fc97 11)
-         [1 10 45 120 210 252 210 120 45 10 1])))
+        [1 10 45 120 210 252 210 120 45 10 1])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 115
@@ -1070,6 +1187,4 @@ Two numbers are coprime if their greatest common divisor equals 1. Euler's totie
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 
